@@ -9,12 +9,13 @@ const awsIot = require('aws-iot-device-sdk');
 const BAUD_RATE = 9600;
 const PORT_NAME = '/dev/ttyACM0';
 
-const thingShadow = awsIot.thingShadow({
+const THING_ID = 'Raspberry-pi-3';
+
+const device = awsIot.device({
   keyPath: 'Raspberry-pi-3.private.key',
   certPath: 'Raspberry-pi-3.cert.pem',
   caPath: 'root-CA.crt',
-  clientId: 'Raspberry-pi-3',
-  thingName: 'Raspberry-pi-3',
+  clientId: THING_ID,
   host:'a2dugt5ayi9ph9.iot.eu-west-1.amazonaws.com'
 });
 
@@ -46,35 +47,22 @@ function startArduinoConnection() {
     // Handle the data sent from the arduino
     arduinoPort.pipe(parser);
 
-    thingShadow.on('connect', () => {
-      console.log('Thing shadow connected');
+    // Handle the sensor data
+    parser.on('data', data => {
+      try {
+        const parsedData = JSON.parse(data);
+        device.publish('$aws/things/' + THING_ID + '/shadow/update', JSON.stringify({
+          state: {
+            reported: {
+              sensor: parsedData,
+            },
+          },
+        }));
 
-      thingShadow.register('Pulse', {}, () => {
 
-        // Handle the sensor data
-        parser.on('data', data => {
-          try {
-            const parsedData = JSON.parse(data);
-            thingShadow.update('Pulse', {
-              state: {
-                desired: {
-                  sensor: parsedData,
-                },
-              },
-            });
-          } catch (e) {
-            console.log('Malformed data format, ignoring. Error: ', e.message);
-          }
-        });
-
-        thingShadow.on('status', (thingName, stat, clientToken, stateObject) => {
-          console.log(`Received ${stat} on ${thingName}: ${JSON.stringify(stateObject)}`);
-        });
-
-        thingShadow.on('timeout',(thingName, clientToken) => {
-          console.log(`Received timeout on ${thingName} with token ${clientToken}}`);
-        });
-      });
+      } catch (e) {
+        console.log('Malformed data format, ignoring. Error: ', e.message);
+      }
     });
   });
 }
