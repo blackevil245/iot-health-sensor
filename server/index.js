@@ -12,9 +12,9 @@ const PORT_NAME = '/dev/ttyACM0';
 const THING_ID = 'Raspberry-pi-3';
 
 const device = awsIot.device({
-  keyPath: 'Raspberry-pi-3.private.key',
-  certPath: 'Raspberry-pi-3.cert.pem',
-  caPath: 'root-CA.crt',
+  keyPath: './server/Raspberry-pi-3.private.key',
+  certPath: './server/Raspberry-pi-3.cert.pem',
+  caPath: './server/root-CA.crt',
   clientId: THING_ID,
   host:'a2dugt5ayi9ph9.iot.eu-west-1.amazonaws.com'
 });
